@@ -1,0 +1,936 @@
+%&pdflatex
+%\documentclass[preprint,numbers,10pt,5p,twocolumn]{elsarticle}
+\documentclass[journal]{IEEEtran}
+
+\usepackage{epsfig} %% for loading postscript figures
+\usepackage{epstopdf}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{adjustbox}
+%%% hyperref
+\usepackage{hyperref}
+
+%\usepackage{capt-of}
+%%% tikz
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+\usetikzlibrary{shapes,arrows,shadows}
+%\usepackage{textcomp}
+%\usepackage{floatrow}%
+% Table float box with bottom caption, box width adjusted to content
+%\newfloatcommand{capbtabbox}{table}[][\FBwidth]
+%\usepackage{subfigure}
+%\usepackage{blindtext}
+
+%%% algorithm
+\usepackage[ruled,vlined]{algorithm2e}
+\newcommand{\forcond}{$i=0$ \KwTo $n$}
+\SetKwFunction{FRecurs}{FnRecursive}
+\SetKwRepeat{Do}{do}{while}
+%\usepackage{algorithmicx}
+%\usepackage{algpseudocode}
+%\algdef{SE}[DOWHILE]{Do}{doWhile}{\algorithmicdo}[1]{\algorithmicwhile\ #1}
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks%  save the current one
+  \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+  \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+  \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+  \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+  \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+  \do\Y\do\Z}
+  
+\DeclareMathOperator*{\minimize}{min.\ }
+
+\begin{document}
+
+\title{Design of Optimized Walking Gaits and Flexible Soles for Humanoid Robots}
+
+%\author{Michael~Shell,~\IEEEmembership{Member,~IEEE,}
+%        John~Doe,~\IEEEmembership{Fellow,~OSA,}
+%        and~Jane~Doe,~\IEEEmembership{Life~Fellow,~IEEE}% <-this % stops a space
+%\thanks{M. Shell is with the Department
+%of Electrical and Computer Engineering, Georgia Institute of Technology, Atlanta,
+%GA, 30332 USA e-mail: (see http://www.michaelshell.org/contact.html).}% <-this % stops a space
+%\thanks{J. Doe and J. Doe are with Anonymous University.}% <-this % stops a space
+%\thanks{Manuscript received April 19, 2005; revised September 17, 2014.}}
+\author{Giovanni De Magistris,~\IEEEmembership{Member,~IEEE,}
+ 		Sylvain Miossec,~\IEEEmembership{Member,~IEEE,}
+ 		Adrien Escande,~\IEEEmembership{Member,~IEEE,}
+ 		Abderrahmane Kheddar,~\IEEEmembership{Member,~IEEE,}% <-this % stops a space
+%\thanks{*This work was not supported by any organization (A remplir)*}% <-this % stops a space
+\thanks{G. De Magistris, A. Escande and A. Kheddar are with CNRS-AIST Joint Robotics Laboratory (JRL), UMI3218/CRT, Japan. (e-mail:giovanni\_demagistris@hotmail.it). G. De Magistris and A. Kheddar are also with CNRS-University of Montpellier, Laboratoire d'Informatique de Robotique et de Micro\'{e}lectronique de Montpellier, IDH, France. S. Miossec is with PRISME Laboratory, University of Orl\'{e}ans, Bourges 18020, France.}}
+%\thanks{This work was funded in part by the EU project Koroibot}% <-this % stops a space
+%\author[label1,label3]{Giovanni De Magistris\corref{cor1}}
+%\author[label2]{Sylvain Miossec}
+%\author[label1]{Adrien Escande}
+%\author[label1,label3]{Abderrahmane Kheddar}
+%
+%\address[label1]{CNRS-AIST Joint Robotics Laboratory (JRL), UMI3218/RL, Japan}
+%\address[label2]{PRISME Laboratory, University of Orl\'{e}ans, Bourges 18020, France}
+%\address[label3]{CNRS-University of Montpellier, LIRMM, Interactive Digital Humans, France}
+
+%\cortext[cor1]{Corresponding author. giovanni$\_$demagistris@hotmail.it}
+%\makeatletter
+%\let\ps@oldempty\ps@empty % save default definition of \ps@empty
+%\renewcommand\ps@empty\ps@plain
+%\makeatother
+% The paper headers
+\markboth{IEEE Transaction on Robotics}%
+{Shell \MakeLowercase{\textit{et al.}}: Bare Demo of IEEEtran.cls for Journals}
+% The only time the second header will appear is for the odd numbered pages
+% after the title page when using the twoside option.
+% 
+% *** Note that you probably will NOT want to include the author's ***
+% *** name in the headers of peer review papers.                   ***
+% You can use \ifCLASSOPTIONpeerreview for conditional compilation here if
+% you desire.
+
+% make the title area
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+We detailed the WPG algorithms.
+\end{abstract}
+
+%\begin{keyword}
+%Quasi-static Shape Optimizations \sep Flexible soles \sep Humanoid robots \sep Walking
+%\end{keyword}
+
+%\end{frontmatter}
+
+%========================================
+\section{Problem formulation}
+\label{sec:problem_form}
+%========================================
+Our objective is to obtain a sole shape $\Omega$ and optimized walking gait for the optimized flexible sole. The optimized sole and walking gait reduces (i) the impact force during the heel-strike phase (shock-absorbing) and (ii) foot rotation during the whole foot movement, while following a given resultant force and position of the support reaction $(\boldsymbol{F}_{\text{ZMP}}(t), \boldsymbol{Z}_{\text{ZMP}}(t))$ that minimizes the robot energy consumption. We formulate this problem as an optimization program.
+
+Using these considerations, we defined the cost function as:
+\begin{equation}
+c = c_{\text{s}} + q c_{\text{wpg}}
+\label{eq:optim_tot}
+\end{equation}
+where:
+\begin{equation}
+\scalebox{0.85}{$
+\begin{array}{lll}
+c_{\text{s}} &=& \int_{t_0}^{t_{h}} \sigma_{\max}\left(\boldsymbol{K^{\text{tr}}_{c}}(\Omega,t)\right) \ dt - w \int_{t_0}^{t_f} \sigma_{\min}\left(\boldsymbol{K^{\text{rot}}_{c}}(\Omega,t)\right) \ \mbox{dt}\\
+&\overset{\text{def}}{=}& c^{\text{tr}} - w \ c^{\text{rot}}
+\end{array}
+$}
+\label{eq:optim_criterion_sole}
+\end{equation}
+\begin{equation}
+\begin{array}{lll}
+c_{\text{wpg}} &=& \int_{t_{i}}^{t_{f}} \lambda \Vert\mathbf{F}_{\mbox{\tiny COM}}(t)\Vert^{2}+ \left(1-\lambda\right) \Vert\mathbf{\Gamma}_{a}(t)\Vert^{2} \ \mbox{dt} + \\
+&&\epsilon \int_{t_{i}}^{t_{f}} ( \Vert\ddot{\textbf{P}}_{\mbox{\tiny ZMP}_1}(t)\Vert^{2} + \Vert\ddot{\textbf{P}}_{\mbox{\tiny ZMP}_2}(t)\Vert^{2}) \ \mbox{dt}
+\end{array}
+\label{eq:optim_criterion_wpg}
+\end{equation}
+where $q$, $w$, $\lambda$, $\epsilon$ are the weights of each criteria $\in \mathbb{R}_+$.
+
+In \eqref{eq:optim_criterion_sole} $\boldsymbol{K_{c}}$ is the Cartesian stiffness matrix, $t_h$ is the end of the heel-strike phase that we define as lasting $10\%$ of the whole contact phase, $\sigma_{\max}$ and $\sigma_{\min}$ denotes respectively the largest and smallest singular value of a matrix, and the two terms correspond respectively to:
+\begin{enumerate}
+  \item minimization of the translational part of the cartesian stiffness matrix $\boldsymbol{K_{c}}$ (maximize the compliance) during the heel-strike phase to reduce the impact force, and
+  \item maximization of the rotational part of the cartesian stiffness matrix $\boldsymbol{K_{c}}$ during the whole foot movement to decrease foot rotation in case of perturbations. Low foot rotation enforces the vertical posture and secures the balance of the robot during walking.
+\end{enumerate}
+Note that $K_c$ and then $c_\text{s}$ is parametrized by $\boldsymbol{F}_{\text{ZMP}}$ and $\boldsymbol{Z}_{\text{ZMP}}$. We specify a maximum volume $v_{\max}$ for the sole.
+
+In \eqref{eq:optim_criterion_wpg}, we minimize the energy consumption. Our criteria is quadratic and as close as possible to the robot energy consumption. From~\cite{shin:tro:2014}, energy consumption taking into account motor and reducer model has the following expression form:
+\begin{equation}
+\label{eq:energy_consumption}
+E = \sum_j \int_{t_{i}}^{t_{f}} (a_j \tau _j^{2} + b_j  \tau_j \dot{q}_j + c_j \dot{q}_j^{2}) dt
+\end{equation}
+where $\tau_j$ is force/torque and $\dot{q}_j$ is the joint $j$ velocity, and $a_j$, $b_j$, $c_j$ are coefficients depending on joint $j$ motor and reducer. Using the simple pendulum model proposed in~\cite{kajita:springer:2008}, we simplified the expression of the energy consumption into \eqref{eq:optim_criterion_wpg}.
+
+$\mathbf{F}_{\mbox{\tiny COM}}$ in \eqref{eq:optim_criterion_wpg} is the COM force and can be expressed as:
+\begin{equation}
+\label{eq:fcom}
+\mathbf{F}_{\mbox{\tiny COM}}(t)=m \left( \ddot{\textbf{P}}_{\mbox{\tiny COM}}(t) + g\vec{z} \right )
+\end{equation}
+where $\ddot{\textbf{P}}_{\mbox{\tiny COM}}$ is the center of mass(COM) acceleration.
+
+$\mathbf{\Gamma}_a$ is the torque at the ankle joint $a$.
+Considering only the foot in contact and assuming it is at a fixed position during the whole single support phase (SSP), we have:
+\begin{equation}
+\label{eq:torque_simple_criterion}
+\mathbf{\Gamma}_a(t)=\mathbf{F}_{\mbox{\tiny ZMP}}(t)\times (\textbf{P}_a(t)-\textbf{P}_{\mbox{\tiny ZMP}}(t)),
+\end{equation}
+where $\textbf{P}_a$ is the ankle position, $\mathbf{F}_{\mbox{\tiny ZMP}}$ is the ground reaction force and $\textbf{P}_{\mbox{\tiny ZMP}}$ is the ZMP position.
+
+During the double support phase (DSP), the two feet are in contact. Considering independently each foot and assuming that they are at a fixed position during the whole DSP, we have:
+\begin{equation}
+\label{eq:torque_foot}
+\begin{array}{l}
+\mathbf{\Gamma}_{a_1}(t)=\mathbf{F}_{\mbox{\tiny ZMP}_1}(t)\times (\textbf{P}_{a_1}(t)-\textbf{P}_{\mbox{\tiny ZMP}_1}(t))\\
+\mathbf{\Gamma}_{a_2}(t)=\mathbf{F}_{\mbox{\tiny ZMP}_2}(t)\times (\textbf{P}_{a_2}(t)-\textbf{P}_{\mbox{\tiny ZMP}_2}(t))
+\end{array}
+\end{equation}
+During the DSP, we note with subscript `1' the foot that leaves the floor at the end of DSP, and with subscript `2', the foot that comes in contact at the beginning of DSP.
+
+$\ddot{\textbf{P}}_{\mbox{\tiny ZMP}_1}$ and $\ddot{\textbf{P}}_{\mbox{\tiny ZMP}_2}$ are respectively the acceleration of ZMP$_1$ and ZMP$_2$. These terms are not issued from the energy consumption but allow to generate ZMP$_1$ and ZMP$_2$ trajectories in the direction of the walk and to minimize the feet angular acceleration.
+%========================================
+\section{Walking Pattern Generator}
+\label{sec:wpg}
+%========================================
+To model the deformation of the sole during the walking, three parameters are linked: (i) sole shape, (ii) position of contact points and their respective applied forces during the contact between the sole and the ground, and (iii) foot orientation. If we know two of these three points, we can deduce the third. In this paper, we decided to generate the contact points with their respective applied forces and then deduce the foot orientation.
+
+We approximated the contact points and their respective applied forces by a ground reaction force generated from a walking pattern generator (WPG) and the zero moment point (ZMP) trajectory. As explain before, in order to design the sole as a shape optimization problem, integrating existing walking pattern generators (PG) is not straightforward due to the link with the foot orientation. Among other technical reasons required by the use of flexible soles (i) we must manage a ZMP under each foot, especially during the double support phase, and (ii) we must have a smooth ZMP to get a smooth orientation. To date, no existing PG fulfils such requirements.
+
+%========================================
+\subsection{ZMP and COM trajectories}
+%========================================
+Based on Morisawa \textit{et al.} \cite{morisawa:humanoids:2006}, we generated the ZMP and the COM trajectories. Nevertheless, the ZMP trajectory is continue and defined as an association of $5^{\text{th}}$ order polynomial functions (minimum jerk invariant theory). To ensure a smooth ZMP trajectory, these polynomials are linked by boundary conditions in position, speed and acceleration.
+
+The ZMP$_1$ trajectory is discontinue and also defined by  $5^{\text{th}}$ order polynomial functions. To ensure a smooth transition from ZMP to ZMP$_1$ at the beginning of each DSP to obtain a smooth ZMP under each foot during a whole foot step, ZMP and ZMP$_1$ also verify boundary conditions in position, speed and acceleration.
+
+The ZMP$_2$ trajectory is discontinue. Using the ZMP definition, we obtain:
+\begin{equation}
+\label{eq:torque_zmp_zmp1_zmp2}
+\mathbf{\Gamma}_{\mbox{\tiny ZMP}}(\mathbf{F}_{\mbox{\tiny ZMP}_1})(t)+\mathbf{\Gamma}_{\mbox{\tiny ZMP}}(\mathbf{F}_{\mbox{\tiny ZMP}_2})(t)=0
+\end{equation}
+where $\mathbf{\Gamma}_{\mbox{\tiny ZMP}}(\mathbf{f}_{{\mbox{\tiny ZMP}}_{i}})$ is the torque of the reaction force $\mathbf{f}_{{\mbox{\tiny ZMP}}_{i}}$ under foot $i\in\{1,2\}$ applied on ZMP during the DSP. Solving~(\ref{eq:torque_zmp_zmp1_zmp2}) in the direction $\vec{y}$, we obtain:
+\begin{equation}
+\label{eq:zmp2}
+x_{\mbox{\tiny ZMP}_2}=x_{\mbox{\tiny ZMP}}-\dfrac{F_{\mbox{\tiny ZMP}_1}}{F_{\mbox{\tiny ZMP}_2}}(x_{\mbox{\tiny ZMP}_1}-x_{\mbox{\tiny ZMP}})
+\end{equation}
+With the same reasoning in the direction $\vec{x}$, we obtain $y_{\mbox{\tiny ZMP}_2}$ by substituting $y$ for $x$ in~(\ref{eq:zmp2}).
+When solving the optimization problem, the ZMP$_2$ trajectory have boundary conditions in position, speed and acceleration with the ZMP trajectory at the end of DSP.
+
+Two via points are defined to parametrize the duration of each ZMP and ZMP$_1$ polynomials. To find the polynomial coefficients of ZMP and ZMP$_1$ and obtain smoother trajectories, we enforced the boundary conditions in position, speed and acceleration at each via-point. The values of position, speed and acceleration are the optimization parameters.
+
+%========================================
+\subsection{Optimization parameters}
+%========================================
+To obtain the ZMP and COM trajectories, we used a QP optimization based on the cost function~(\ref{eq:optim_criterion}). The optimization parameters are: 
+\begin{itemize}
+	\item Position, speed and acceleration at via-points of ZMP
+	\item Feet positions
+	\item Position, speed and acceleration at via-points of ZMP$_1$.	
+\end{itemize}
+We imposed:
+\begin{itemize}
+	\item Initial and final feet positions
+	\item Initial and final position, speed and acceleration of ZMP
+	\item Initial and final position of COM
+	\item Durations of the SSP and the DSP
+	\item The COM height
+	\item Foot orientation
+\end{itemize}
+We can also impose some feet positions to manage the walking path.
+
+To enforce the humanoid stability during walking, the ZMP trajectories must be inside the support convex hull~\cite{Vukabratovic1969}\cite{vukobratovic:ijhr:2004}. The support convex hull is defined by the area of the support foot. To obtain this area, we added inequality constraints to our PG optimization problem. During the SSP, this condition is linear and can be integrated as inequality constraints into a QP. During DSP, this condition is not linear. However, if ZMP$_1$ and ZMP$_2$ trajectories are in the support convex hull defined by the areas of each foot, the stability condition for ZMP trajectories is fulfilled. These conditions are linear and can also be integrated in the QP optimization.
+
+Based on human walking results~\cite{popovic:ijrr:2005} and to compensate the robot precision~\cite{kajita:springer:2008}, we defined a feet support areas with a security margin of $5-10\%$ of the foot length. To avoid auto-collisions, we defined a minimal distance between the robot feet (3cm). To avoid stretched legs singularity, we chose a maximum step length (30cm).
+
+\section{Conclusion}
+In this paper we detailed the algorithms of the WPG.
+
+\bibliographystyle{IEEEtran}
+\bibliography{Bibliography}
+\onecolumn
+\section{Walking pattern generator gradient}
+Every equation will be express in the x-axis direction but the same reasoning can be done in the y-axis direction and concatenate everything at the end.
+\subsection{Cost function and Gradient}
+The cost function of the WPG optimization is:
+\begin{equation}
+\scalebox{0.9}{$
+\label{eq:optim_criterion}
+\mbox{c}_{\text{wpg}} = \mbox{min} \int_{t_{i}}^{t_{f}}{
+\left(\lambda \ \Vert\mathbf{F}_{\mbox{\tiny COM}}(t)\Vert^{2} + (1-\lambda)  \Vert\mathbf{\Gamma}_{an_{SSP}}(t)\Vert^{2} + \dfrac{1}{2}(1-\lambda) ( \Vert\mathbf{\Gamma}_{an_1}(t)\Vert^{2} + \Vert\mathbf{\Gamma}_{an_2}(t)\Vert^{2} ) + \epsilon (\Vert\ddot{\mathbf{P}}_{\mbox{\tiny ZMP}_1}(t)\Vert^{2} + \Vert\ddot{\mathbf{P}}_{\mbox{\tiny ZMP}_2}(t)\Vert^{2})
+ \right)
+ \ \mbox{dt}}
+ $}
+\end{equation}
+Where $an_{SSP}$ refers to the ankle of the support foot in SSP and $an_i$ refers to the ankle of the foot "1" or "2" in DSP.
+
+$\mathbf{F}_{\mbox{\tiny COM}}$, $\mathbf{\Gamma}_{an}$ and $\ddot{\mathbf{P}}_{ZMP_i}$ are linear on optimization variables. They can be written as:
+\begin{equation}
+\mathbf{F}_{\mbox{\tiny COM}}=\mathbf{A}_{\mathbf{F}_{\mbox{\tiny COM}}} X + B_{\mathbf{F}_{\mbox{\tiny COM}}}, \ \mathbf{\Gamma}_{an}=\mathbf{A}_{\mathbf{\Gamma}_{an}} X + B_{\mathbf{\Gamma}_{an}}, \ \ddot{\mathbf{P}}_{ZMP_i}=\mathbf{A}_{\ddot{\mathbf{P}}_{ZMP_i}} X + B_{\ddot{\mathbf{P}}_{ZMP_i}} 
+\end{equation}
+
+$X$ is the vector of optimization variables:
+\begin{equation}
+X=
+\begin{bmatrix}
+\mathbf{x^{vp}_0} &
+\mathbf{x^{\mbox{\tiny COM}}_0} &
+\mathbf{x^{\mbox{\tiny step}}_0} &
+\mathbf{x^{vp'}_0}
+\end{bmatrix}^{T}
+\end{equation}
+Where $\mathbf{x^{vp}_0}$ represents the boundary conditions of ZMP via-points, $\mathbf{x^{\mbox{\tiny COM}}_0}$ represents the initial and final boundary condition of COM, $\mathbf{x^{\mbox{\tiny step}}_0}$ represents the foot step positions and $\mathbf{x^{vp'}_0}$ represents the boundary conditions of ZMP$_1$ via-points.
+
+Thus the cost function can be written:
+\begin{equation}
+\label{eq:cost_wpg}
+\mbox{c}_{\text{wpg}}=\dfrac{1}{2}X^{T}\mathbf{H}X+\mathbf{G}X+\dfrac{1}{2}C
+\end{equation}
+Where
+\begin{equation}
+\begin{array}{lll}
+\mathbf{H}&=&\lambda\mathbf{A}_{\mathbf{F}_{\mbox{\tiny COM}}}^{T}\mathbf{A}_{\mathbf{F}_{\mbox{\tiny COM}}}+(1-\lambda)\mathbf{A}_{\mathbf{\Gamma}_{an_{SSP}}}^{T}\mathbf{A}_{\mathbf{\Gamma}_{an_{SSP}}} + \dfrac{1}{2}(1-\lambda) ( \mathbf{A}^{T}_{\mathbf{\Gamma}_{an_1}}\mathbf{A}_{\mathbf{\Gamma}_{an_1}} + \mathbf{A}^{T}_{\mathbf{\Gamma}_{an_2}(t)}\mathbf{A}_{\mathbf{\Gamma}_{an_2}(t)} ) \\ 
+&&+ \epsilon(\mathbf{A}^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}\mathbf{A}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}
+ + \mathbf{A}^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}}\mathbf{A}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}})\\
+\mathbf{G}&=&\lambda B_{\mathbf{F}_{\mbox{\tiny COM}}}^{T}\mathbf{A}_{\mathbf{F}_{\mbox{\tiny COM}}}+(1-\lambda)B_{\mathbf{\Gamma}_{an_{SSP}}}^{T}\mathbf{A}_{\mathbf{\Gamma}_{an_{SSP}}} + \dfrac{1}{2}(1-\lambda) ( B^{T}_{\mathbf{\Gamma}_{an_1}}\mathbf{A}_{\mathbf{\Gamma}_{an_1}} + B^{T}_{\mathbf{\Gamma}_{an_2}(t)}\mathbf{A}_{\mathbf{\Gamma}_{an_2}(t)} ) \\ 
+&&+ \epsilon(B^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}\mathbf{A}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}
+ + B^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}}\mathbf{A}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}})\\
+\mathbf{C}&=&\lambda\mathbf{B}_{\mathbf{F}_{\mbox{\tiny COM}}}^{T}\mathbf{B}_{\mathbf{F}_{\mbox{\tiny COM}}}+(1-\lambda)\mathbf{B}_{\mathbf{\Gamma}_{an_{SSP}}}^{T}\mathbf{B}_{\mathbf{\Gamma}_{an_{SSP}}} + \dfrac{1}{2}(1-\lambda) ( \mathbf{B}^{T}_{\mathbf{\Gamma}_{an_1}}\mathbf{B}_{\mathbf{\Gamma}_{an_1}} + \mathbf{B}^{T}_{\mathbf{\Gamma}_{an_2}(t)}\mathbf{B}_{\mathbf{\Gamma}_{an_2}(t)} ) \\
+&&+ \epsilon(\mathbf{B}^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}\mathbf{B}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_1$}}}
+ + \mathbf{B}^{T}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}}\mathbf{B}_{\ddot{\mathbf{P}}_{\mbox{\tiny ZMP$_2$}}})
+\end{array}
+\end{equation}
+
+The gradient of $cost$ is:
+\begin{equation}
+\label{eq:gradient_wpg}
+\dfrac{\partial{\mbox{c}_{\text{wpg}}}}{\partial{X}}=X^T\mathbf{H}+\mathbf{G}
+\end{equation}
+
+The COM forces are defined by:
+\begin{equation}
+\label{eq:fcom_algo}
+\mathbf{F}_{\mbox{\tiny COM}}=m \left( \ddot{\textbf{P}}_{\mbox{\tiny COM}} - g\vec{z} \right)
+\end{equation}
+With
+\begin{equation}
+\label{eq:com_equation}
+\ddot{x}_{\mbox{\tiny COM}}=\dfrac{g}{z_{\mbox{\tiny COM}}}(x_{\mbox{\tiny COM}}-x_{\mbox{\tiny ZMP}}), \ x_{\mbox{\tiny COM}}=\mathbf{A}_{x_{\mbox{\tiny COM}}} X + B_{x_{\mbox{\tiny COM}}}, \ x_{\mbox{\tiny ZMP}}=\mathbf{A}_{x_{\mbox{\tiny ZMP}}} X + B_{x_{\mbox{\tiny ZMP}}}
+\end{equation}
+Thus
+\begin{equation}
+\label{eq:com_forces}
+f^{x}_{\mbox{\tiny COM}}=\dfrac{mg}{z_{\mbox{\tiny COM}}} \left(\mathbf{A}_{x_{\mbox{\tiny COM}}}- \mathbf{A}_{x_{\mbox{\tiny ZMP}}} \right) X+\dfrac{mg}{z_{\mbox{\tiny COM}}}\left(B_{x_{\mbox{\tiny COM}}}- B_{x_{\mbox{\tiny ZMP}}} \right)
+\end{equation}
+
+The torques in ankle are defined by:
+\begin{equation}
+\mathbf{\Gamma}_{an_g}=\mathbf{F}_{\mbox{\tiny ZMP}_g}\times (\textbf{P}_{an_g}-\textbf{P}_{\mbox{\tiny ZMP}_g}), \ \mathbf{\Gamma}^{y}_{an_g}=f^{x}_{\mbox{\tiny ZMP}_g}\cdot h_{an_g}+f^{z}_{\mbox{\tiny ZMP}_g}\cdot(x_{an_g}-x{\mbox{\tiny ZMP}_g})
+\end{equation}
+With $h_{an_g}= \ \mbox{height of the ankle $g$}\nonumber$, $g \in \lbrace \mbox{SSP},1,2 \rbrace$ and:
+\begin{equation}
+\mathbf{F}_{\mbox{\tiny ZMP}}=-\mathbf{F}_{\mbox{\tiny COM}}, \ \mathbf{F}_{\mbox{\tiny ZMP}}=\mathbf{F}_{\mbox{\tiny ZMP}_1}+\mathbf{F}_{\mbox{\tiny ZMP}_2}, \ \mathbf{F}_{\mbox{\tiny ZMP}_2}=k\cdot \mathbf{F}_{\mbox{\tiny ZMP}}, \ x_{\mbox{\tiny ZMP}_g}=\mathbf{A}_{x_{\mbox{\tiny ZMP}_g}} X + B_{x_{\mbox{\tiny ZMP}_g}}, \ x_{an_g}=\mathbf{A}_{x_{an_g}} X + B_{x_{an_g}}
+\end{equation}
+$k$ is a 5$^{\text{th}}$ order polynomial representing the repartition of ZMP force under each foot.
+
+Thus:
+\begin{equation}
+\begin{split}
+\mathbf{\Gamma}^y_{an_{SSP}}=m\cdot h_{an_{SSP}} \left(\mathbf{A}_{x_{\mbox{\tiny COM}}}- \mathbf{A}_{x_{\mbox{\tiny ZMP}}} \right) X -mg\left(\mathbf{A}_{x_{an_{SSP}}}-\mathbf{A}_{x_{\mbox{\tiny ZMP}}}\right)X\\
++m\cdot h_{an_{SSP}} \left(B_{x_{\mbox{\tiny COM}}}- B_{x_{\mbox{\tiny ZMP}}} \right)-mg\left(B_{x_{an_{SSP}}}-B_{x_{\mbox{\tiny ZMP}}}\right)
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\mathbf{\Gamma}^y_{an_{1}}=m\cdot h_{an_{1}} \cdot (1-k) \left(\mathbf{A}_{x_{\mbox{\tiny COM}}}- \mathbf{A}_{x_{\mbox{\tiny ZMP}}} \right) X -mg\left(\mathbf{A}_{x_{an_{1}}}-\mathbf{A}_{x_{\mbox{\tiny ZMP}_{1}}}\right)X\\
++m\cdot h_{an_{1}} \cdot (1-k) \left(B_{x_{\mbox{\tiny COM}}}- B_{x_{\mbox{\tiny ZMP}}} \right)-mg\left(B_{x_{an_{1}}}-B_{x_{\mbox{\tiny ZMP}_{1}}}\right)
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\mathbf{\Gamma}^y_{an_{2}}=m\cdot h_{an_{2}} \cdot k \left(\mathbf{A}_{x_{\mbox{\tiny COM}}}- \mathbf{A}_{x_{\mbox{\tiny ZMP}}} \right) X -mg\left(\mathbf{A}_{x_{an_{2}}}-\mathbf{A}_{x_{\mbox{\tiny ZMP}_{2}}}\right)X\\
++m\cdot h_{an_{2}} \cdot k \left(B_{x_{\mbox{\tiny COM}}}- B_{x_{\mbox{\tiny ZMP}}} \right)-mg\left(B_{x_{an_{2}}}-B_{x_{\mbox{\tiny ZMP}_{2}}}\right)
+\end{split}
+\end{equation}
+
+\subsection{ZMP detailed}
+During the sequence number $j$, ZMP is defined by:
+\begin{equation}
+\label{eq:zmp_global}
+x_{ZMP}^{(j)}(t)=\sum_{i=0}^{5}a_{i}^{(j)}(\Delta t_{j})^{i}
+\end{equation}
+Where $a_{i}$ is the $i^{th}$ polynomial coefficient, $\Delta t_{j}=t-T_j$ and $T_j$ is the time at the beginning of the sequence $j$.
+
+ZMP polynomials are interpolated between two via-points and verify boundary conditions in position, velocity and acceleration. Thus polynomial coefficients of the sequence $j$ are defined by:
+\begin{equation}
+\label{eq:interpol_poly}
+\begin{bmatrix}
+{\textbf{Ca}}^{(j)}_{012} & {\textbf{Ca}}^{(j)}_{345}
+\end{bmatrix}
+\begin{bmatrix}
+x_0^{(j)} \\
+\dot{x}_0^{(j)} \\
+\ddot{x}_0^{(j)}\\
+x_0^{(j+1)} \\
+\dot{x}_0^{(j+1)} \\
+\ddot{x}_0^{(j+1)}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 \\
+1 & \Delta T_{j} & (\Delta T_{j})^{2} & (\Delta T_{j})^{3} & (\Delta T_{j})^{4} & (\Delta T_{j})^{5} \\
+0 & 1 & 2(\Delta T_{j}) & 3(\Delta T_{j})^{2} & 4(\Delta T_{j})^{3} & 5(\Delta T_{j})^{4} \\
+0 & 0 & 1 & 6(\Delta T_{j}) & 12(\Delta T_{j})^{2} & 20(\Delta T_{j})^{3} \\
+\end{bmatrix}^{-1}
+\begin{bmatrix}
+x_0^{(j)} \\
+\dot{x}_0^{(j)} \\
+\ddot{x}_0^{(j)}\\
+x_0^{(j+1)} \\
+\dot{x}_0^{(j+1)} \\
+\ddot{x}_0^{(j+1)}
+\end{bmatrix}
+=
+\begin{bmatrix}
+a_0^{(j)} \\
+a_1^{(j)} \\
+\vdots \\
+a_5^{(j)} \\
+\end{bmatrix}
+\end{equation}
+Where $\textbf{Ca}^{(j)}_{012}$ and $\textbf{Ca}^{(j)}_{345}$ are $6\times 3$ matrix, $\Delta T_{j}=T_{j+1}-T_j$ and $x_0^{(j)}$ is the position of the via-point at the beginning of the sequence $j$.
+\begin{equation}
+\textbf{Ca}=\begin{bmatrix}
+{\textbf{Ca}}^{(1)}_{012} & {\textbf{Ca}}^{(1)}_{345} & 0 & 0 & \ldots & \ldots & \ldots & 0 \\
+0 & {\textbf{Ca}}^{(2)}_{012} & {\textbf{Ca}}^{(2)}_{345} & 0  & \ldots & \ldots & \ldots & 0 \\
+\vdots & {} & {} & \ddots & \ddots & {} & {} & \vdots\\
+0 & \ldots & \ldots & \ldots & 0 & {\textbf{Ca}}^{(ns-1)}_{012} & {\textbf{Ca}}^{(ns-1)}_{345} & 0 \\
+0 & \ldots & \ldots & \ldots & 0 & 0 & {\textbf{Ca}}^{(ns)}_{012} & {\textbf{Ca}}^{(ns)}_{345} \\
+\end{bmatrix}_{6ns\times 3(ns+1)}
+\end{equation}
+Where $ns$ is the number of sequence.
+
+The ZMP polynomial coefficients are:
+\begin{equation}
+\begin{bmatrix}
+a_0^{(0)} & a_1^{(0)} &
+\ldots &
+a_5^{(0)} &
+\ldots &
+a_5^{(ns)} &
+\end{bmatrix}^{T}
+=
+\textbf{Ca}\cdot\mathbf{x^{vp}_0}
+\end{equation}
+With
+\begin{equation}
+\label{eq:viapoint_variables}
+\mathbf{x^{vp}_0}=\begin{bmatrix}
+x_0^{(1)} &
+\dot{x}_0^{(1)} &
+\ddot{x}_0^{(1)}&
+x_0^{(2)} &
+\cdots&
+\ddot{x}_0^{(ns+1)}
+\end{bmatrix}^{T}
+\end{equation}
+
+Now we discretize our ZMP. The time discretization is defined by:
+\begin{equation}
+\begin{array}{l}
+\textbf{t}(t,j)=
+\begin{bmatrix}
+1 & \Delta t_{j} & (\Delta t_{j})^{2} & (\Delta t_{j})^{3} & (\Delta t_{j})^{4} & (\Delta t_{j})^{5}
+\end{bmatrix}, \ \textbf{dt}(j)=
+\begin{bmatrix}
+\textbf{t}(t_j+dt^{(j)},j) & \textbf{t}(t_j+2dt^{(j)},j) & \cdots & \textbf{t}(t_{j+1},j)
+\end{bmatrix}^{T}\\
+\textbf{M}_t=
+\begin{bmatrix}
+\textbf{t}(t_1,1) &  0 & \cdots & 0\\
+\textbf{dt}(1) & 0 & \cdots & \vdots\\
+0 & \textbf{dt}(2) & {} & \vdots\\
+\vdots & {} & \ddots & 0 \\
+0 & \cdots &  \cdots & \textbf{dt}(ns) 
+\end{bmatrix}
+\end{array}
+\end{equation}
+Where $dt^{(j)}$ is the discretized time period of the phase $j$.
+
+The ZMP trajectory can be written:
+\begin{equation}
+\label{eq:zmp_def}
+x_{\mbox{\tiny ZMP}}=\mathbf{A}_{x_{\mbox{\tiny ZMP}}} X + B_{x_{\mbox{\tiny ZMP}}}=\textbf{M}_t\cdot\textbf{Ca}\cdot\mathbf{x^{vp}_0}
+\end{equation}
+Thus
+\begin{equation}
+\begin{split}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}}}=\textbf{M}_t
+\begin{bmatrix}
+\textbf{Ca} & 0
+\end{bmatrix}, B_{x_{\mbox{\tiny ZMP}}}=0
+\end{split}
+\end{equation}
+
+\subsection{COM detailed}
+Based on Morisawa \textit{et al.} \cite{morisawa:humanoids:2006}:
+\begin{equation}
+\ddot{x}_{\mbox{\tiny COM}}^{(j)}=\dfrac{g}{z_{\mbox{\tiny COM}}}(x_{\mbox{\tiny COM}}^{(j)}-x_{\mbox{\tiny ZMP}}^{(j)})
+\end{equation}
+Substituting~(\ref{eq:zmp_global}) into~(\ref{eq:com_equation}), the COM position can be expressed by:
+\begin{equation}
+\label{eq:com_j_eq}
+x_{\mbox{\tiny COM}}^{(j)}(t)=V^{(j)}c_{j}+W^{(j)}s_{j}+\sum_{i=0}^{5}A_{i}^{(j)}(\Delta t_{j})^{i}
+\end{equation}
+where:
+\begin{equation}
+\begin{array}{l}
+c_{j}=\mbox{cosh}(\omega_{j}\Delta t_{j}), \ s_{j}=\mbox{sinh}(\omega_{j}\Delta t_{j}), \ \omega_{j}=\sqrt{\frac{g}{z_{\mbox{\tiny COM}}^{(j)}}}=\!\sqrt{g/z_{\mbox{\tiny COM}}}, \\
+A_{i}^{(j)}=\left\{
+\begin{array}{ll}
+\!a_{i}^{(j)}\!+\!\sum_{k=1}^{(5-i)/2}b_{i+2k}^{(j)}a_{i+2k}^{(j)} &\mbox{for} \: i=\!0\ldots3\\
+\!a_{i}^{(j)} &\mbox{for} \: i=\!4,5
+\end{array}
+\right., \ b_{i+2k}^{(j)}=\prod_{l=1}^{k}\dfrac{(i+2l)(i+2l-1)}{w_{j}^{2}}\nonumber
+\end{array}
+\end{equation}
+$V^{(j)}$ and $W^{(j)}$ are the unknowns of the system. In~(\ref{eq:com_j_eq}), $a^{(j)}_{i}$ coefficients are known. This is the difference between~(\ref{eq:com_j_eq}) and the system of equations in~\cite{morisawa:humanoids:2006}.
+
+Equation (\ref{eq:com_j_eq}) has $2m$ unknowns with $m=3n+2$ phases. These unknowns satisfy the following boundary conditions for the COM position and velocity:
+\begin{enumerate}
+	\item Initial
+\begin{equation}
+\label{eq:com_init_pos_cons}
+x^{(1)}(T_{0})=V^{(1)}+A_{0}^{(1)}
+\end{equation}
+\begin{equation}
+\label{eq:com_init_spd_cons}
+\dot{x}^{(1)}(T_{0})=W^{(1)}+A_{1}^{(1)}
+\end{equation}
+	\item Relationship between two successive sequences
+	%\setlength{\arraycolsep}{0.0em}
+\begin{equation}
+\label{eq:com_continu_pos_cons}
+VW^{(j)}+\sum_{i=0}^{5}A_{i}^{(j)}(\Delta T_{j})^{i}=V^{(j+1)}+A_{0}^{(j+1)}
+\end{equation}
+\begin{equation}
+\label{eq:com_continu_spd_cons}
+VW\omega^{(j)}+\sum_{i=1}^{5}iA_{i}^{(j)}(\Delta T_{j})^{i-1}=W^{(j+1)}\omega_{j}+A_{1}^{(j+1)}
+\end{equation}
+where
+\begin{equation}
+\begin{array}{l}
+VW^{(j)}=V^{(j)}C_{j}+W^{(j)}S_{j}\\ 
+VW\omega^{(j)}=V^{(j)}\omega_{j}S_{j}+W^{(j)}\omega_{j}C_{j}, \ C_{j}=\mbox{cosh}(\omega_{j}\Delta T_{j}), \ \ S_{j}=\mbox{sinh}(\omega_{j}\Delta T_{j})
+\end{array}\nonumber
+\end{equation}
+	\item Final
+\begin{equation}
+\label{eq:com_fin_pos_cons}
+x^{(ns)}(T_{ns})=VW^{(ns)}+\sum_{i=0}^{5}A_{i}^{(ns)}(\Delta T_{ns})^{i}
+\end{equation}
+\begin{equation}
+\label{eq:com_fin_spd_cons}
+\dfrac{d{x}^{(ns)}}{dt}(T_{ns})=VW\omega^{(ns)}+\sum_{i=1}^{5}iA_{i}^{(ns)}(\Delta T_{ns})^{i-1}
+\end{equation}
+where $\Delta T_{j}=T_{j+1}-T_{j}$.
+\end{enumerate}
+
+From the boundary conditions~(\ref{eq:com_init_pos_cons})-(\ref{eq:com_fin_pos_cons}), the total conditions are $2m+2$. Removing COM velocity conditions on initial and final phases (they are solved at the pattern optimization level), $2m$ conditions remain. The unknowns can be calculated then by the following system:
+\begin{equation}
+\label{eq:sys_solve}
+\textbf{G} \cdot \textbf{y}=\textbf{N}\cdot\textbf{x}+\textbf{H}\cdot\textbf{l}
+\end{equation}
+where
+\begin{equation}
+\begin{array}{l}
+\textbf{y}=\left[ V^{(1)} \; W^{(1)} \; \cdots \; V^{(j)} \; W^{(j)} \; \cdots \; V^{(ns)} \;  W^{(ns)}\right]^{T}\\
+\textbf{x}=\mathbf{x^{\mbox{\tiny COM}}_0}=\left[ x^{(1)}_{\mbox{\tiny COM}}(T_{1}) \; \dot{x}^{(1)}_{\mbox{\tiny COM}}(T_{1}) \;  x^{(ns+1)}_{\mbox{\tiny COM}}(T_{ns+1}) \; \dot{x}^{(ns+1)}_{\mbox{\tiny COM}}(T_{ns+1})\right]^{T}\\
+\textbf{l}=\left[ A_{0}^{(1)} \; \cdots \; A_{5}^{(1)} \; \cdots \; A_{0}^{(ns)} \; \cdots \; A_{5}^{(ns)}\right]^{T}\\
+\textbf{G}_{h,q}=\left\lbrace \begin{array}{ll}
+\begin{bmatrix}1 \; 0\end{bmatrix} & \mbox{for} \ (h,q)=(1,1)\\
+\begin{bmatrix}C_{ns} \; S_{ns}\end{bmatrix} & \mbox{for} \ (h,q)=(ns+2,ns)\\
+G_{1,h} & \mbox{for} \ q=h-1\\
+G_{2,h} & \mbox{for} \ q=h\\
+0 & \mbox{otherwise} \end{array}
+\right. 
+\\
+\textbf{N}_{h,1}=\left\lbrace \begin{array}{ll}
+\begin{bmatrix}1 & 0 & 0 & 0\end{bmatrix} & \mbox{for} \ h=1\\
+\begin{bmatrix}0 & 0 & 1 & 0\end{bmatrix} & \mbox{for} \ h=ns+2\\
+\begin{bmatrix}0 & 0 & 0 & 0\end{bmatrix} & \mbox{otherwise} \end{array}
+\right. 
+\\
+\textbf{H}_{h,q}=\left\lbrace 
+\begin{array}{ll}
+\begin{bmatrix}1 & 0 & 0 & 0 & 0 & 0\end{bmatrix} & \mbox{for} \ (h,q)=(1,1)\\
+-\begin{bmatrix}(\Delta T_{ns})^{0} & \cdots & (\Delta T_{ns})^{5}\end{bmatrix} & \mbox{for} \ (h,q)=(ns+2,ns) \\
+H_{1,h} & \mbox{for} \ q=h-1\\
+H_{2,h} & \mbox{for} \ q=h\\
+0 & \mbox{otherwise} \end{array}
+\right. \nonumber
+\end{array}
+\end{equation}
+with $h=1,\ldots,ns+2$, $q=1,\ldots,ns$, $\textbf{G}_{1,h}=
+\begin{bmatrix}
+C_{j} & S_{h}\\
+\omega_{h}S_{h} & \omega_{h}C_{h}
+\end{bmatrix}\nonumber$, $
+\textbf{G}_{2,h}=
+\begin{bmatrix}
+-1 & 0\\
+0 & -\omega_{h}
+\end{bmatrix}$, 
+
+$
+\textbf{H}_{1,h}=-
+\begin{bmatrix}(\Delta T_{ns})^{0} & (\Delta T_{ns})^{1} & \cdots & (\Delta T_{ns})^{5}\\
+0 & (\Delta T_{ns})^{0} & \cdots & (\Delta T_{ns})^{4}
+\end{bmatrix}
+$, $\textbf{H}_{2,h}=
+\begin{bmatrix}
+	1 & 0 & 0 & 0 & 0 & 0 \\
+	0 & 1 & 0 & 0 & 0 & 0 
+\end{bmatrix}
+$.
+
+From~(\ref{eq:com_j_eq}), the part related to the ZMP polynomial coefficients is:
+\begin{equation}
+\begin{bmatrix}
+A_0^{(j)} \\
+A_1^{(j)} \\
+\vdots \\
+A_5^{(j)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+\textbf{A}^{(j)}_{A}
+\end{bmatrix}
+\begin{bmatrix}
+a_0^{(j)} \\
+a_1^{(j)} \\
+\vdots \\
+a_5^{(j)} \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 2/w^2 & 0 & 24/w^4 & 0 \\
+0 & 1 & 0 & 6/w^2 & 0 & 120/w^4 \\
+0 & 0 & 1 & 0 & 12/w^2 & 0 \\
+0 & 0 & 0 & 1 & 0 & 20/w^2 \\
+0 & 0 & 0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 0 & 0 & 1 \\
+\end{bmatrix}
+\begin{bmatrix}
+a_0^{(j)} \\
+a_1^{(j)} \\
+\vdots \\
+a_5^{(j)} \\
+\end{bmatrix}
+\end{equation}
+Thus
+\begin{equation}
+\textbf{A}_A=
+\begin{bmatrix}
+\textbf{A}^{(1)}_{A} & 0 & \cdots & 0\\
+0 & \textbf{A}^{(2)}_{A} & {} & \vdots\\
+\vdots & {} & \ddots \\
+0 & \cdots & \cdots & \textbf{A}^{(ns)}_{A}
+\end{bmatrix}
+\end{equation}
+And
+\begin{equation}
+\label{eq:l}
+\textbf{l}=\left[ A_{0}^{(1)} \; \cdots \; A_{5}^{(1)} \; \cdots \; A_{0}^{(ns)} \; \cdots \; A_{5}^{(ns)}\right]^{T}=\mathbf{A}_A\cdot\mathbf{Ca}\cdot\mathbf{x^{vp}_0}=\begin{bmatrix} \mathbf{A}_A\cdot\mathbf{Ca} & 0 \end{bmatrix} X
+\end{equation}
+
+By replacing into~(\ref{eq:sys_solve}):
+\begin{equation}
+\begin{split}
+\textbf{y} &=
+\begin{bmatrix}
+V^{(1)} & W^{(1)} & \cdots & V^{(j)} & W^{(j)} & \cdots & V^{(ns)} &  W^{(ns)}
+\end{bmatrix}^{T} \\
+&=\textbf{G}^{-1}(\mathbf{N}\cdot\mathbf{x^{\mbox{\tiny COM}}_0}+\mathbf{H}\cdot\mathbf{A}_A\cdot\mathbf{Ca}\cdot\mathbf{x^{vp}_0})=\textbf{G}^{-1}
+\begin{bmatrix}
+\mathbf{H}\cdot\mathbf{A}_A \cdot\mathbf{Ca} & \mathbf{N} & 0
+\end{bmatrix}X
+\end{split}
+\end{equation}
+
+Now we have to discretize the terms in $cosh$ and $sinh$. the discretized $cosh$ and $sinh$ are:
+\begin{equation}
+\label{eq:cs_discretized}
+\begin{array}{l}
+\textbf{cs}(t,j)=
+\begin{bmatrix}
+cosh(\omega_j \Delta t_j) & sinh(\omega_j \Delta t_j)
+\end{bmatrix}, \textbf{dcs}(j)=
+\begin{bmatrix}
+\textbf{cs}(t_j+dt^{(j)},j) & \textbf{cs}(t_j+2dt^{(j)},j) & \cdots & \textbf{cs}(t_{j+1},j)
+\end{bmatrix}^{T}\\
+\textbf{M}_{cs}=
+\begin{bmatrix}
+\textbf{cs}(t_1,1) &  0 & \cdots & 0\\
+\textbf{dcs}(1) & 0 & \cdots & \vdots\\
+0 & \textbf{dcs}(2) & {} & \vdots\\
+\vdots & {} & \ddots & 0 \\
+0 & \cdots &  \cdots & \textbf{dcs}(ns) 
+\end{bmatrix}
+\end{array}
+\end{equation}
+
+with~(\ref{eq:sys_solve}),~(\ref{eq:l}) and~(\ref{eq:cs_discretized}), COM can be written as:
+\begin{equation}
+\begin{array}{lll}
+x_{\mbox{\tiny COM}} &=& \mathbf{A}_{x_{\mbox{\tiny COM}}} X + B_{x_{\mbox{\tiny COM}}} = \textbf{M}_{cs}\cdot\mathbf{y}+\mathbf{M}_t\cdot\mathbf{l}\\
+&=&\textbf{M}_{cs}\cdot\textbf{G}^{-1}\begin{bmatrix}
+\mathbf{H}\cdot\mathbf{A}_A \cdot\mathbf{Ca} & \mathbf{N} & 0
+\end{bmatrix}X + \mathbf{M}_t\cdot\begin{bmatrix} \mathbf{A}_A\cdot\mathbf{Ca} & 0 \end{bmatrix} X\\
+&=&\begin{bmatrix}
+\textbf{M}_{cs}\cdot\textbf{G}^{-1}\cdot\mathbf{H}\cdot\mathbf{A}_A \cdot\mathbf{Ca}+\mathbf{M}_t\cdot\mathbf{A}_A\cdot\mathbf{Ca} & \textbf{M}_{cs}\cdot\textbf{G}^{-1}\cdot\mathbf{N}
+\end{bmatrix}X
+\end{array}
+\end{equation}
+Thus
+\begin{equation}
+\begin{matrix}
+\mathbf{A}_{x_{\mbox{\tiny COM}}}=\begin{bmatrix}
+\textbf{M}_{cs}\cdot\textbf{G}^{-1}\cdot\mathbf{H}\cdot\mathbf{A}_A \cdot\mathbf{Ca}+\mathbf{M}_t\cdot\mathbf{A}_A\cdot\mathbf{Ca} & \textbf{M}_{cs}\cdot\textbf{G}^{-1}\cdot\mathbf{N}
+\end{bmatrix}, B_{x_{\mbox{\tiny COM}}}=0
+\end{matrix}
+\end{equation}
+
+\subsection{Ankle position detailed}
+Ankle positions are equivalent to foot step positions:
+\begin{equation}
+\mathbf{x^{\mbox{\tiny step}}_0}=\begin{bmatrix}
+x^{\mbox{\tiny step}}_1 & x^{\mbox{\tiny step}}_2 & \cdots & x^{\mbox{\tiny step}}_{nfs}
+\end{bmatrix}
+\end{equation}
+Where $nfs$ is the number of foot step.
+
+Foot step positions are expressed as:
+\begin{equation}
+\mathbf{A}_{x_{an_{SSP}}}=\mathbf{M}_{an_{SSP}}\cdot\mathbf{x^{\mbox{\tiny step}}_0}=
+\begin{bmatrix}
+0 & \mathbf{M}_{an_{SSP}} & 0
+\end{bmatrix} X
+\end{equation}
+
+Foot step positions in SSP are:
+\begin{equation}
+\mathbf{M}_{an_{SSP}}^{(m,n)}=
+\left\lbrace 
+\begin{matrix}
+1 & \mbox{for} \ m=\mbox{SSP increments} & \mbox{and} & n=\mbox{ corresponding SSP foot step} \\
+0 & \mbox{otherwise} 
+\end{matrix}
+\right.
+\end{equation}
+
+Foot$_1$ step positions in DSP are:
+\begin{equation}
+\mathbf{A}_{x_{an_{1}}}=\mathbf{M}_{an_{1}}\cdot\mathbf{x^{\mbox{\tiny step}}_0}=
+\begin{bmatrix}
+0 & \mathbf{M}_{an_{1}} & 0
+\end{bmatrix} X
+\end{equation}
+\begin{equation}
+\mathbf{M}_{an_{1}}^{(m,n)}=
+\left\lbrace 
+\begin{matrix}
+1 & \mbox{for} \ m=\mbox{DSP increments} & \mbox{and} & n=\mbox{ corresponding DSP foot$_1$ step} \\
+0 & \mbox{otherwise} 
+\end{matrix}
+\right.
+\end{equation}
+
+Foot$_2$ step positions in DSP are:
+\begin{equation}
+\mathbf{A}_{x_{an_{2}}}=\mathbf{M}_{an_{2}}\cdot\mathbf{x^{\mbox{\tiny step}}_0}=
+\begin{bmatrix}
+0 & \mathbf{M}_{an_{2}} & 0
+\end{bmatrix} X
+\end{equation}
+\begin{equation}
+\mathbf{M}_{an_{2}}^{(m,n)}=
+\left\lbrace 
+\begin{matrix}
+1 & \mbox{for} \ m=\mbox{DSP increments} & \mbox{and} & n=\mbox{ corresponding DSP foot$_2$ step} \\
+0 & \mbox{otherwise} 
+\end{matrix}
+\right.
+\end{equation}
+With $m =1,\ldots,nd$, $n =1,\ldots,nfs$ and $nd=1+\sum_{i=1}^{ns}{\lceil}t_{i+1}-t_{i})/dt^{(i)}{\rceil}$ is the number of the total discretized point.
+
+\subsection{ZMP$_1$ and ZMP$_2$ detailed}
+During the sequence number $j\in$ DSP, ZMP$_1$ is defined by:
+\begin{equation}
+x_{ZMP_1}^{(j)}(t)=\sum_{i=0}^{5}a_{1,i}^{(j)}(\Delta t_{j})^{i}
+\end{equation}
+
+As ZMP, ZMP$_1$ polynomials are interpolated between two via-points and verify boundary conditions in position, velocity and acceleration. Thus polynomial coefficients of the sequence $j\in$ DSP are defined by:
+\begin{equation}
+\begin{bmatrix}
+{\textbf{Ca}}^{(j)}_{1,012} & {\textbf{Ca}}^{(j)}_{1,345}
+\end{bmatrix}
+\begin{bmatrix}
+x_0^{(j)} \\
+\dot{x}_0^{(j)} \\
+\ddot{x}_0^{(j)}\\
+x_1^{(j)} \\
+\dot{x}_1^{(j)} \\
+\ddot{x}_1^{(j)}
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 & 0 \\
+1 & \Delta T_{j} & (\Delta T_{j})^{2} & (\Delta T_{j})^{3} & (\Delta T_{j})^{4} & (\Delta T_{j})^{5} \\
+0 & 1 & 2(\Delta T_{j}) & 3(\Delta T_{j})^{2} & 4(\Delta T_{j})^{3} & 5(\Delta T_{j})^{4} \\
+0 & 0 & 1 & 6(\Delta T_{j}) & 12(\Delta T_{j})^{2} & 20(\Delta T_{j})^{3} \\
+\end{bmatrix}^{-1}
+\begin{bmatrix}
+x_0^{(j)} \\
+\dot{x}_0^{(j)} \\
+\ddot{x}_0^{(j)}\\
+x_1^{(j)} \\
+\dot{x}_1^{(j)} \\
+\ddot{x}_1^{(j)}
+\end{bmatrix}
+=
+\begin{bmatrix}
+a_{1,0}^{(j)} \\
+a_{1,1}^{(j)} \\
+\vdots \\
+a_{1,5}^{(j)} \\
+\end{bmatrix}
+\end{equation}
+Where $\textbf{Ca}^{(j)}_{1,012}$ and $\textbf{Ca}^{(j)}_{1,345}$ are $6\times 3$ matrix, $\Delta T_{j}=t_{j+1}-t_j$, $x_0^{(j)}$ is the position of the via-point at the beginning of the sequence $j$ and $x_1^{(j)}$ is the position of the via-points at the end of the DSP.
+\begin{equation}
+\mathbf{Ca}_{1}^{(r,s)}=
+\left\lbrace 
+\begin{matrix}
+\textbf{Ca}^{(r)}_{1,012} & \mbox{for} \ r=s=\mbox{DSP sequence} \\
+\textbf{Ca}^{(r)}_{1,345} & \mbox{for} \ r=\mbox{DSP sequence} & \mbox{and} \ s=ns+\mbox{corresponding ZMP$_1$ via-point}\\
+0 & \mbox{otherwise} 
+\end{matrix}
+\right.
+\end{equation}
+With $r=1,\ldots,ns$, $s=1,\ldots,(\mbox{number of rows of X})$.
+
+ZMP$_1$ polynomial coefficients are:
+\begin{equation}
+\begin{bmatrix}
+a_{1,0}^{(0)} & a_{1,1}^{(0)} &
+\ldots &
+a_{1,5}^{(0)} &
+\ldots &
+a_{1,5}^{(ns)} &
+\end{bmatrix}^{T}
+=
+\textbf{Ca}_1
+\begin{bmatrix}
+\mathbf{x^{vp}_0} \\
+\mathbf{x^{\mbox{\tiny COM}}_0} \\
+\mathbf{x^{\mbox{\tiny step}}_0} \\
+\mathbf{x^{vp'}_0}
+\end{bmatrix}
+\end{equation}
+
+The ZMP$_1$ trajectory is:
+\begin{equation}
+\label{eq:zmp1_def}
+x_{\mbox{\tiny ZMP}_1}=\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}} X + B_{x_{\mbox{\tiny ZMP}_1}}=\textbf{M}_t\cdot\textbf{Ca}_1\cdot X
+\end{equation}
+Thus
+\begin{equation}
+\begin{split}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}}=
+\textbf{M}_t\cdot\textbf{Ca}_1, B_{x_{\mbox{\tiny ZMP}}}=0
+\end{split}
+\end{equation}
+
+ZMP$_2$ is obtained with
+\begin{equation}
+x_{\mbox{\tiny ZMP}_2}^{(j)}=x_{\mbox{\tiny ZMP}_1}^{(j)}-\dfrac{1}{k^{(j)}}(x_{\mbox{\tiny ZMP}_1}^{(j)}-x_{\mbox{\tiny ZMP}}^{(j)})
+\end{equation}
+Where
+\begin{equation}
+k^{(j)}=\mathbf{dt}(j)\cdot \begin{bmatrix}
+\mathbf{Ca}^{(j)}_{012} & \textbf{Ca}^{(j)}_{345}
+\end{bmatrix}
+\cdot
+\begin{bmatrix}
+0 & 0 & 0 & 1 & 0 & 0
+\end{bmatrix}^{T}, \ \mathbf{k}^{u,1}=
+\left\lbrace 
+\begin{matrix}
+k^{(r)} & \mbox{for} \ r=\mbox{DSP sequence}\\
+0 & \mbox{otherwise} 
+\end{matrix}
+\right.
+\end{equation}
+
+The ZMP$_2$ trajectory is:
+\begin{equation}
+\label{eq:zmp2_def}
+\begin{matrix}
+x_{\mbox{\tiny ZMP}_2} &=\mathbf{A}_{x_{\mbox{\tiny ZMP}_2}} X + B_{x_{\mbox{\tiny ZMP}_2}} \\
+&=\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}} X + B_{x_{\mbox{\tiny ZMP}_1}} &- (\mbox{diag}(\mathbf{k}))^{-1}\cdot((\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}}-\mathbf{A}_{x_{\mbox{\tiny ZMP}}}) X + (B_{x_{\mbox{\tiny ZMP}_1}}-B_{x_{\mbox{\tiny ZMP}}}))
+\end{matrix}=0
+\end{equation}
+Thus
+\begin{equation}
+\begin{matrix}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}_2}}=\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}}-(\mbox{diag}(\mathbf{k}))^{-1}\cdot(\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}}-\mathbf{A}_{x_{\mbox{\tiny ZMP}}}) \\
+B_{x_{\mbox{\tiny ZMP}_2}}=\mathbf{B}_{x_{\mbox{\tiny ZMP}_1}}-(\mbox{diag}(\mathbf{k}))^{-1}\cdot(\mathbf{B}_{x_{\mbox{\tiny ZMP}_1}}-\mathbf{B}_{x_{\mbox{\tiny ZMP}}})
+\end{matrix}
+\end{equation}
+
+\subsection{Cost concatenation and gradients}
+The concatenation of $cost$~(\ref{eq:cost_wpg}) is written:
+\begin{equation}
+\label{eq:cost_wpg_concatenate}
+\mbox{c}_{\text{wpg}}=\dfrac{1}{2}
+\begin{bmatrix}
+X^x \\ X^y
+\end{bmatrix}^{T}
+\begin{bmatrix}
+H^x & 0\\ 0 & H^y
+\end{bmatrix}\begin{bmatrix}
+X^x \\ X^y
+\end{bmatrix}+
+\begin{bmatrix}
+G^x & G^y
+\end{bmatrix}
+\begin{bmatrix}
+X^x \\ X^y
+\end{bmatrix}+
+\dfrac{1}{2}(C^x+C^y)
+\end{equation}
+
+From~(\ref{eq:cost_wpg_concatenate}) and~(\ref{eq:gradient_wpg}), the gradient of the WPG cost is:
+\begin{equation}
+\dfrac{\partial{\mbox{c}_{\text{wpg}}}}{\partial{X}}=
+\begin{bmatrix}
+X^x \\ X^y
+\end{bmatrix}^{T}
+\begin{bmatrix}
+H^x & 0\\ 0 & H^y
+\end{bmatrix}+
+\begin{bmatrix}
+G^x & G^y
+\end{bmatrix}
+\end{equation}
+
+From~(\ref{eq:com_forces}), the gradient of ZMP forces is:
+\begin{equation}
+\dfrac{\partial{\mathbf{f}_{\tiny ZMP}}}{\partial{X}}=-\dfrac{\partial{\mathbf{f}_{\tiny COM}}}{\partial{X}}=-\begin{bmatrix}
+\dfrac{mg}{z_{\mbox{\tiny COM}}} \left(\mathbf{A}_{x_{\mbox{\tiny COM}}}- \mathbf{A}_{x_{\mbox{\tiny ZMP}}} \right) & 0\\
+0 & \dfrac{mg}{z_{\mbox{\tiny COM}}} \left(\mathbf{A}_{y_{\mbox{\tiny COM}}}- \mathbf{A}_{y_{\mbox{\tiny ZMP}}} \right)
+\end{bmatrix}
+\end{equation}
+
+From~(\ref{eq:zmp_def}), {}~(\ref{eq:zmp1_def}) and~(\ref{eq:zmp2_def}), the gradients of ZMP, ZMP$_1$ and ZMP$_2$ are:
+\begin{equation}
+\dfrac{\partial{\mathbf{P}_{\mbox{\tiny ZMP}}}}{\partial{X}}=\begin{bmatrix}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}}} & 0\\
+0 & \mathbf{A}_{y_{\mbox{\tiny ZMP}}}
+\end{bmatrix},
+{}
+\dfrac{\partial{\mathbf{P}_{\mbox{\tiny ZMP}_1}}}{\partial{X}}=\begin{bmatrix}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}_1}} & 0\\
+0 & \mathbf{A}_{y_{\mbox{\tiny ZMP}_1}}
+\end{bmatrix},
+{}
+\dfrac{\partial{\mathbf{P}_{\mbox{\tiny ZMP}_2}}}{\partial{X}}=\begin{bmatrix}
+\mathbf{A}_{x_{\mbox{\tiny ZMP}_2}} & 0\\
+0 & \mathbf{A}_{y_{\mbox{\tiny ZMP}_2}}
+\end{bmatrix}
+\end{equation}
+\end{document}

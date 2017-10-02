@@ -1,0 +1,18 @@
+dans le fichier .txt, il y a dans l’ordre :
+-temps
+-zmp suivant x
+-zmp suivant y
+-com suivant x
+-com suivant y
+-reaction du sol sur le pied suivant x
+-reaction du sol sur le pied suivant y
+-reaction du sol sur le pied suivant z
+ 
+position de la cheville : [0.9902    0.0950]
+ 
+taille du pied :
+distance en l’arrière du pied et la cheville : 0.1
+distance en l’avant du pied et la cheville : 0.13
+distance en l’extérieur du pied et la cheville : 0.075 (bord gauche dans notre cas)
+distance en l’intérieur du pied et la cheville : 0.055 (bord droit dans notre cas)
+Je t’ai mis en plus le tracé des courbes.
